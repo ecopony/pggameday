@@ -35,14 +35,18 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	fetchFunction := func(game *gamedayapi.Game) {
 		log.Println(">>>> " + game.ID + " <<<<")
 		for _, inning := range game.AllInnings().Innings {
+			half := "top"
 			for _, atBat := range inning.AtBats() {
+				if atBat.O == "3" {
+					half = "bottom"
+				}
 				for _, pitch := range atBat.Pitches {
 					log.Println("> " + pitch.Des)
 					res, err := db.Query(`INSERT INTO pitches
-						(id, year, inning)
+						(id, year, inning, half)
 						VALUES
-						($1, $2, $3)`,
-						game.ID, game.Year(), inning.Num)
+						($1, $2, $3, $4)`,
+						game.ID, game.Year(), inning.Num, half)
 					if err != nil {
 						log.Fatal(err)
 					}
