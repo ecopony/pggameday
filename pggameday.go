@@ -12,7 +12,6 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	log.Println("Importing for " + teamCode)
 
 	// Assumes a pg database exists named go-gameday, a role that can access it.
-	// Assumes a table called pitches with a character column called code.
 	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
 	issue := db.Ping()
 	log.Println(issue)
@@ -34,6 +33,16 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 
 	fetchFunction := func(game *gamedayapi.Game) {
 		log.Println(">>>> " + game.ID + " <<<<")
+
+		var pitchCount int
+		err := db.QueryRow("SELECT count(*) FROM pitches WHERE game_id = $1", game.ID).Scan(&pitchCount)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if pitchCount > 0 {
+			return
+		}
+
 		for _, inning := range game.AllInnings().Innings {
 			half := "top"
 			for _, atBat := range inning.AtBats() {
