@@ -22,7 +22,7 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	defer db.Close()
 
 	db.Exec("DROP TABLE IF EXISTS pitches")
-	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, id varchar(40), year int, inning int, half varchar(6),
+	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
 	at_bat_num int, at_bat_b int, at_bat_s int, at_bat_o int, at_bat_start_tfs int, batter int, stand char(1), b_height
 	varchar(4), pitcher int, p_throws char(1), at_bat_des varchar(400), at_bat_event varchar(20), pitch_des varchar(40),
 	pitch_id int, pitch_type char(2), type_confidence DECIMAL(4, 3), pitch_tfs int, pitch_x DECIMAL(5, 2), pitch_y
@@ -41,12 +41,20 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 					half = "bottom"
 				}
 				for _, pitch := range atBat.Pitches {
-					log.Println("> " + pitch.Des)
+					log.Println("> " + atBat.StartTFS)
+
 					res, err := db.Query(`INSERT INTO pitches
-						(id, year, inning, half)
+						(game_id, year, inning, half, at_bat_num, at_bat_b, at_bat_s, at_bat_o, at_bat_start_tfs,
+						batter, stand, b_height, pitcher, p_throws, at_bat_des, at_bat_event,
+						pitch_des, pitch_id, pitch_type, type_confidence, pitch_tfs
+						)
 						VALUES
-						($1, $2, $3, $4)`,
-						game.ID, game.Year(), inning.Num, half)
+						($1, $2, $3, $4, $5, $6, $7, $8, $9,
+						$10, $11, $12, $13, $14, $15, $16,
+						$17, $18, $19, $20, $21)`,
+						game.ID, game.Year(), inning.Num, half, atBat.Num, atBat.B, atBat.S, atBat.O, nullableString(atBat.StartTFS),
+						atBat.Batter, atBat.Stand, atBat.BHeight, atBat.Pitcher, atBat.PThrows, atBat.Des, atBat.Event,
+						pitch.Des, pitch.ID, pitch.Type, nullableString(pitch.TypeConfidence), nullableString(pitch.TFS))
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -56,4 +64,11 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 		}
 	}
 	gamedayapi.FetchByTeamAndYears(teamCode, years, fetchFunction)
+}
+
+func nullableString(value string) interface {} {
+	if value == "" {
+		return nil
+	}
+	return value
 }
