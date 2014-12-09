@@ -41,20 +41,41 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 					half = "bottom"
 				}
 				for _, pitch := range atBat.Pitches {
-					log.Println("> " + atBat.StartTFS)
+					// log.Println("> " + pitch.SzTop)
 
 					res, err := db.Query(`INSERT INTO pitches
 						(game_id, year, inning, half, at_bat_num, at_bat_b, at_bat_s, at_bat_o, at_bat_start_tfs,
 						batter, stand, b_height, pitcher, p_throws, at_bat_des, at_bat_event,
-						pitch_des, pitch_id, pitch_type, type_confidence, pitch_tfs
+						pitch_des, pitch_id, pitch_type, type_confidence, pitch_tfs,
+						pitch_x, pitch_y, pitch_sv_id, pitch_start_speed, pitch_end_speed,
+						sz_top, sz_bottom, pfx_x, pfx_z,
+						px, pz, x0, y0,
+						z0, vx0, vy0, vz0,
+						ax, ay, az, break_y,
+						break_angle, break_length, zone,
+						spin_dir, spin_rate
 						)
 						VALUES
 						($1, $2, $3, $4, $5, $6, $7, $8, $9,
 						$10, $11, $12, $13, $14, $15, $16,
-						$17, $18, $19, $20, $21)`,
+						$17, $18, $19, $20, $21,
+						$22, $23, $24, $25, $26,
+						$27, $28, $29, $30,
+						$31, $32, $33, $34,
+						$35, $36, $37, $38,
+						$39, $40, $41, $42,
+						$43, $44, $45,
+						$46, $47)`,
 						game.ID, game.Year(), inning.Num, half, atBat.Num, atBat.B, atBat.S, atBat.O, nullableString(atBat.StartTFS),
 						atBat.Batter, atBat.Stand, atBat.BHeight, atBat.Pitcher, atBat.PThrows, atBat.Des, atBat.Event,
-						pitch.Des, pitch.ID, pitch.Type, nullableString(pitch.TypeConfidence), nullableString(pitch.TFS))
+						pitch.Des, pitch.ID, pitch.Type, nullableString(pitch.TypeConfidence), nullableString(pitch.TFS),
+						pitch.X, pitch.Y, pitch.SvID, nullableString(pitch.StartSpeed), nullableString(pitch.EndSpeed),
+						nullableString(pitch.SzTop), nullableString(pitch.SzBottom), nullableString(pitch.PFXX), nullableString(pitch.PFXZ),
+						nullableString(pitch.PX), nullableString(pitch.PZ), nullableString(pitch.X0), nullableString(pitch.Y0),
+						nullableString(pitch.Z0), nullableString(pitch.VX0), nullableString(pitch.VY0), nullableString(pitch.VZ0),
+						nullableString(pitch.AX), nullableString(pitch.AY), nullableString(pitch.AZ), nullableString(pitch.BreakY),
+						nullableString(pitch.BreakAngle), nullableString(pitch.BreakLength), nullableString(pitch.Zone),
+						nullableString(pitch.SpinDir), nullableString(pitch.SpinRate))
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -66,7 +87,7 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	gamedayapi.FetchByTeamAndYears(teamCode, years, fetchFunction)
 }
 
-func nullableString(value string) interface {} {
+func nullableString(value string) interface{} {
 	if value == "" {
 		return nil
 	}
