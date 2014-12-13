@@ -20,16 +20,18 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	}
 	defer db.Close()
 
-	db.Exec("DROP TABLE IF EXISTS pitches")
-	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
-	at_bat_num int, at_bat_b int, at_bat_s int, at_bat_o int, at_bat_start_tfs int, batter int, stand char(1), b_height
-	varchar(4), pitcher int, p_throws char(1), at_bat_des varchar(400), at_bat_event varchar(20), pitch_des varchar(40),
-	pitch_id int, pitch_type char(2), type_confidence DECIMAL(4, 3), pitch_tfs int, pitch_x DECIMAL(5, 2), pitch_y
-	DECIMAL(5, 2), pitch_sv_id varchar(40), pitch_start_speed DECIMAL(4, 1), pitch_end_speed DECIMAL(4, 1), sz_top
-	DECIMAL(3, 2), sz_bottom DECIMAL(3, 2), pfx_x DECIMAL(4, 2), pfx_z DECIMAL(4, 2), px DECIMAL(4, 3), pz
-	DECIMAL(4, 3), x0 DECIMAL(5, 3), y0 DECIMAL(5, 3), z0 DECIMAL(5, 3), vx0 DECIMAL(4, 2), vy0 DECIMAL(6, 3), vz0
-	DECIMAL(5, 3), ax DECIMAL(5, 3), ay DECIMAL(5, 3), az DECIMAL(5, 3), break_y DECIMAL(3, 1), break_angle
-	DECIMAL(4, 1), break_length DECIMAL(3, 1), zone int, spin_dir DECIMAL(6, 3), spin_rate DECIMAL(7, 3))`)
+//  For the time being, assume this database exists...
+//	db.Exec("DROP TABLE IF EXISTS pitches")
+//	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
+//	at_bat_num int, at_bat_b int, at_bat_s int, at_bat_o int, at_bat_start_tfs int, batter int, stand char(1), b_height
+//	varchar(4), pitcher int, p_throws char(1), at_bat_des varchar(400), at_bat_event varchar(20), pitch_des varchar(40),
+//	pitch_id int, pitch_type char(1), pitch_pitch_type char(2), type_confidence DECIMAL(4, 3), pitch_tfs int,
+//  pitch_x DECIMAL(5, 2), pitch_y DECIMAL(5, 2), pitch_sv_id varchar(40), pitch_start_speed DECIMAL(4, 1),
+//  pitch_end_speed DECIMAL(4, 1), sz_top DECIMAL(3, 2), sz_bottom DECIMAL(3, 2), pfx_x DECIMAL(4, 2), pfx_z
+//  DECIMAL(4, 2), px DECIMAL(4, 3), pz DECIMAL(4, 3), x0 DECIMAL(5, 3), y0 DECIMAL(5, 3), z0 DECIMAL(5, 3), vx0
+//  DECIMAL(4, 2), vy0 DECIMAL(6, 3), vz0 DECIMAL(5, 3), ax DECIMAL(5, 3), ay DECIMAL(5, 3), az DECIMAL(5, 3), break_y
+//  DECIMAL(3, 1), break_angle DECIMAL(4, 1), break_length DECIMAL(3, 1), zone int, spin_dir DECIMAL(6, 3), spin_rate
+//  DECIMAL(7, 3))`)
 
 	fetchFunction := func(game *gamedayapi.Game) {
 		log.Println(">>>> " + game.ID + " <<<<")
@@ -55,8 +57,8 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 					res, err := db.Query(`INSERT INTO pitches
 						(game_id, year, inning, half, at_bat_num, at_bat_b, at_bat_s, at_bat_o, at_bat_start_tfs,
 						batter, stand, b_height, pitcher, p_throws, at_bat_des, at_bat_event,
-						pitch_des, pitch_id, pitch_type, type_confidence, pitch_tfs,
-						pitch_x, pitch_y, pitch_sv_id, pitch_start_speed, pitch_end_speed,
+						pitch_des, pitch_id, pitch_type, pitch_pitch_type, type_confidence,
+						pitch_tfs, pitch_x, pitch_y, pitch_sv_id, pitch_start_speed, pitch_end_speed,
 						sz_top, sz_bottom, pfx_x, pfx_z,
 						px, pz, x0, y0,
 						z0, vx0, vy0, vz0,
@@ -67,18 +69,18 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 						VALUES
 						($1, $2, $3, $4, $5, $6, $7, $8, $9,
 						$10, $11, $12, $13, $14, $15, $16,
-						$17, $18, $19, $20, $21,
-						$22, $23, $24, $25, $26,
+						$17, $18, $19, $20,
+						$21, $22, $23, $24, $25, $26,
 						$27, $28, $29, $30,
 						$31, $32, $33, $34,
 						$35, $36, $37, $38,
 						$39, $40, $41, $42,
 						$43, $44, $45,
-						$46, $47)`,
+						$46, $47, $48)`,
 						game.ID, game.Year(), inning.Num, half, atBat.Num, atBat.B, atBat.S, atBat.O, nullableString(atBat.StartTFS),
 						atBat.Batter, atBat.Stand, atBat.BHeight, atBat.Pitcher, atBat.PThrows, atBat.Des, atBat.Event,
-						pitch.Des, pitch.ID, pitch.Type, nullableString(pitch.TypeConfidence), nullableString(pitch.TFS),
-						pitch.X, pitch.Y, pitch.SvID, nullableString(pitch.StartSpeed), nullableString(pitch.EndSpeed),
+						pitch.Des, pitch.ID, pitch.Type, nullableString(pitch.PitchType), nullableString(pitch.TypeConfidence),
+						nullableString(pitch.TFS), pitch.X, pitch.Y, pitch.SvID, nullableString(pitch.StartSpeed), nullableString(pitch.EndSpeed),
 						nullableString(pitch.SzTop), nullableString(pitch.SzBottom), nullableString(pitch.PFXX), nullableString(pitch.PFXZ),
 						nullableString(pitch.PX), nullableString(pitch.PZ), nullableString(pitch.X0), nullableString(pitch.Y0),
 						nullableString(pitch.Z0), nullableString(pitch.VX0), nullableString(pitch.VY0), nullableString(pitch.VZ0),
