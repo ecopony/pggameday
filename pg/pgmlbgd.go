@@ -10,6 +10,7 @@ import (
 )
 
 var commands = map[string]func([]string) {
+	"create-tables": createTables,
 	"import-pitches-for-year": importPitchesForYear,
 	"import-pitches-for-team-and-year": importPitchesForTeamAndYear,
 }
@@ -44,6 +45,10 @@ func validateArgLength(args []string, validLength int) {
 		printUsage()
 		os.Exit(1)
 	}
+}
+
+func createTables(args []string) {
+	pggameday.CreateTables()
 }
 
 func importPitchesForYear(args []string) {

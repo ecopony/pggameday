@@ -7,6 +7,33 @@ import (
 	"log"
 )
 
+// CreateTables creates the database tables used by the importer. For now it's just the pitches table.
+// This will drop tables if they already exist.
+func CreateTables() {
+	log.Println("Creating database tables.")
+
+	// Assumes a pg database exists named go-gameday, a role that can access it.
+	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	log.Println("\t-Creating pitches table")
+	db.Exec("DROP TABLE IF EXISTS pitches")
+	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
+		at_bat_num int, at_bat_b int, at_bat_s int, at_bat_o int, at_bat_start_tfs int, batter int, stand char(1), b_height
+		varchar(4), pitcher int, p_throws char(1), at_bat_des varchar(400), at_bat_event varchar(20), pitch_des varchar(40),
+		pitch_id int, pitch_type char(1), pitch_pitch_type char(2), type_confidence DECIMAL(4, 3), pitch_tfs int,
+	  	pitch_x DECIMAL(5, 2), pitch_y DECIMAL(5, 2), pitch_sv_id varchar(40), pitch_start_speed DECIMAL(4, 1),
+	  	pitch_end_speed DECIMAL(4, 1), sz_top DECIMAL(3, 2), sz_bottom DECIMAL(3, 2), pfx_x DECIMAL(4, 2), pfx_z
+	  	DECIMAL(4, 2), px DECIMAL(4, 3), pz DECIMAL(4, 3), x0 DECIMAL(5, 3), y0 DECIMAL(5, 3), z0 DECIMAL(5, 3), vx0
+	  	DECIMAL(4, 2), vy0 DECIMAL(6, 3), vz0 DECIMAL(5, 3), ax DECIMAL(5, 3), ay DECIMAL(5, 3), az DECIMAL(5, 3), break_y
+	  	DECIMAL(3, 1), break_angle DECIMAL(4, 1), break_length DECIMAL(3, 1), zone int, spin_dir DECIMAL(6, 3), spin_rate
+	  	DECIMAL(7, 3), nasty int)`)
+	log.Println("Done.")
+}
+
 // ImportPitchesForTeamAndYears saves all pitch data fields for a team and season.
 func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	log.Println("Importing for " + teamCode)
@@ -19,19 +46,6 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
-	//  For the time being, assume this database exists...
-	//	db.Exec("DROP TABLE IF EXISTS pitches")
-	//	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
-	//	at_bat_num int, at_bat_b int, at_bat_s int, at_bat_o int, at_bat_start_tfs int, batter int, stand char(1), b_height
-	//	varchar(4), pitcher int, p_throws char(1), at_bat_des varchar(400), at_bat_event varchar(20), pitch_des varchar(40),
-	//	pitch_id int, pitch_type char(1), pitch_pitch_type char(2), type_confidence DECIMAL(4, 3), pitch_tfs int,
-	//  pitch_x DECIMAL(5, 2), pitch_y DECIMAL(5, 2), pitch_sv_id varchar(40), pitch_start_speed DECIMAL(4, 1),
-	//  pitch_end_speed DECIMAL(4, 1), sz_top DECIMAL(3, 2), sz_bottom DECIMAL(3, 2), pfx_x DECIMAL(4, 2), pfx_z
-	//  DECIMAL(4, 2), px DECIMAL(4, 3), pz DECIMAL(4, 3), x0 DECIMAL(5, 3), y0 DECIMAL(5, 3), z0 DECIMAL(5, 3), vx0
-	//  DECIMAL(4, 2), vy0 DECIMAL(6, 3), vz0 DECIMAL(5, 3), ax DECIMAL(5, 3), ay DECIMAL(5, 3), az DECIMAL(5, 3), break_y
-	//  DECIMAL(3, 1), break_angle DECIMAL(4, 1), break_length DECIMAL(3, 1), zone int, spin_dir DECIMAL(6, 3), spin_rate
-	//  DECIMAL(7, 3), nasty int)`)
 
 	fetchFunction := func(game *gamedayapi.Game) {
 		log.Println(">>>> " + game.ID + " <<<<")
