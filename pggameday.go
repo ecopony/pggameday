@@ -20,18 +20,18 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	}
 	defer db.Close()
 
-//  For the time being, assume this database exists...
-//	db.Exec("DROP TABLE IF EXISTS pitches")
-//	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
-//	at_bat_num int, at_bat_b int, at_bat_s int, at_bat_o int, at_bat_start_tfs int, batter int, stand char(1), b_height
-//	varchar(4), pitcher int, p_throws char(1), at_bat_des varchar(400), at_bat_event varchar(20), pitch_des varchar(40),
-//	pitch_id int, pitch_type char(1), pitch_pitch_type char(2), type_confidence DECIMAL(4, 3), pitch_tfs int,
-//  pitch_x DECIMAL(5, 2), pitch_y DECIMAL(5, 2), pitch_sv_id varchar(40), pitch_start_speed DECIMAL(4, 1),
-//  pitch_end_speed DECIMAL(4, 1), sz_top DECIMAL(3, 2), sz_bottom DECIMAL(3, 2), pfx_x DECIMAL(4, 2), pfx_z
-//  DECIMAL(4, 2), px DECIMAL(4, 3), pz DECIMAL(4, 3), x0 DECIMAL(5, 3), y0 DECIMAL(5, 3), z0 DECIMAL(5, 3), vx0
-//  DECIMAL(4, 2), vy0 DECIMAL(6, 3), vz0 DECIMAL(5, 3), ax DECIMAL(5, 3), ay DECIMAL(5, 3), az DECIMAL(5, 3), break_y
-//  DECIMAL(3, 1), break_angle DECIMAL(4, 1), break_length DECIMAL(3, 1), zone int, spin_dir DECIMAL(6, 3), spin_rate
-//  DECIMAL(7, 3))`)
+	//  For the time being, assume this database exists...
+	//	db.Exec("DROP TABLE IF EXISTS pitches")
+	//	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
+	//	at_bat_num int, at_bat_b int, at_bat_s int, at_bat_o int, at_bat_start_tfs int, batter int, stand char(1), b_height
+	//	varchar(4), pitcher int, p_throws char(1), at_bat_des varchar(400), at_bat_event varchar(20), pitch_des varchar(40),
+	//	pitch_id int, pitch_type char(1), pitch_pitch_type char(2), type_confidence DECIMAL(4, 3), pitch_tfs int,
+	//  pitch_x DECIMAL(5, 2), pitch_y DECIMAL(5, 2), pitch_sv_id varchar(40), pitch_start_speed DECIMAL(4, 1),
+	//  pitch_end_speed DECIMAL(4, 1), sz_top DECIMAL(3, 2), sz_bottom DECIMAL(3, 2), pfx_x DECIMAL(4, 2), pfx_z
+	//  DECIMAL(4, 2), px DECIMAL(4, 3), pz DECIMAL(4, 3), x0 DECIMAL(5, 3), y0 DECIMAL(5, 3), z0 DECIMAL(5, 3), vx0
+	//  DECIMAL(4, 2), vy0 DECIMAL(6, 3), vz0 DECIMAL(5, 3), ax DECIMAL(5, 3), ay DECIMAL(5, 3), az DECIMAL(5, 3), break_y
+	//  DECIMAL(3, 1), break_angle DECIMAL(4, 1), break_length DECIMAL(3, 1), zone int, spin_dir DECIMAL(6, 3), spin_rate
+	//  DECIMAL(7, 3), nasty int)`)
 
 	fetchFunction := func(game *gamedayapi.Game) {
 		log.Println(">>>> " + game.ID + " <<<<")
@@ -64,7 +64,7 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 						z0, vx0, vy0, vz0,
 						ax, ay, az, break_y,
 						break_angle, break_length, zone,
-						spin_dir, spin_rate
+						spin_dir, spin_rate, nasty
 						)
 						VALUES
 						($1, $2, $3, $4, $5, $6, $7, $8, $9,
@@ -76,7 +76,7 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 						$35, $36, $37, $38,
 						$39, $40, $41, $42,
 						$43, $44, $45,
-						$46, $47, $48)`,
+						$46, $47, $48, $49)`,
 						game.ID, game.Year(), inning.Num, half, atBat.Num, atBat.B, atBat.S, atBat.O, nullableString(atBat.StartTFS),
 						atBat.Batter, atBat.Stand, atBat.BHeight, atBat.Pitcher, atBat.PThrows, atBat.Des, atBat.Event,
 						pitch.Des, pitch.ID, pitch.Type, nullableString(pitch.PitchType), nullableString(pitch.TypeConfidence),
@@ -86,7 +86,7 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 						nullableString(pitch.Z0), nullableString(pitch.VX0), nullableString(pitch.VY0), nullableString(pitch.VZ0),
 						nullableString(pitch.AX), nullableString(pitch.AY), nullableString(pitch.AZ), nullableString(pitch.BreakY),
 						nullableString(pitch.BreakAngle), nullableString(pitch.BreakLength), nullableString(pitch.Zone),
-						nullableString(pitch.SpinDir), nullableString(pitch.SpinRate))
+						nullableString(pitch.SpinDir), nullableString(pitch.SpinRate), nullableString(pitch.Nasty))
 					if err != nil {
 						log.Fatal(err)
 					}
