@@ -20,6 +20,7 @@ func CreateTables() {
 	defer db.Close()
 
 	log.Println("\t-Creating pitches table")
+	db.Exec("DROP INDEX IF EXISTS pitches_game_id")
 	db.Exec("DROP TABLE IF EXISTS pitches")
 	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
 		at_bat_num int, at_bat_b int, at_bat_s int, at_bat_o int, at_bat_start_tfs int, batter int, stand char(1), b_height
@@ -31,12 +32,25 @@ func CreateTables() {
 	  	DECIMAL(4, 2), vy0 DECIMAL(6, 3), vz0 DECIMAL(5, 3), ax DECIMAL(5, 3), ay DECIMAL(5, 3), az DECIMAL(5, 3), break_y
 	  	DECIMAL(3, 1), break_angle DECIMAL(4, 1), break_length DECIMAL(3, 1), zone int, spin_dir DECIMAL(6, 3), spin_rate
 	  	DECIMAL(7, 3), nasty int)`)
+	log.Println("\t-Creating pitches index")
+	db.Exec("CREATE INDEX pitches_game_id ON pitches (game_id)")
+
+	log.Println("\t-Creating players table")
+	db.Exec("DROP INDEX IF EXISTS players_id")
+	db.Exec("DROP TABLE IF EXISTS players")
+	db.Exec(`CREATE TABLE players (playerid SERIAL PRIMARY KEY, id int, first varchar(40), last varchar(40), num int,
+		boxname varchar(40), rl varchar(1), bats varchar(1), position varchar(2), current_position varchar(2), status
+		varchar(1), team_abbrev varchar(3), team_id int, parent_team_abbrev varchar(3), parent_team_id int, bat_order int,
+		game_position varchar(2), avg DECIMAL(4, 3), rbi int, wins int, losses int, era DECIMAL(5, 2)`)
+	log.Println("\t-Creating players index")
+	db.Exec("CREATE INDEX players_id ON players (id)")
+	
 	log.Println("Done.")
 }
 
 // ImportPitchesForTeamAndYears saves all pitch data fields for a team and season.
 func ImportPitchesForTeamAndYears(teamCode string, years []int) {
-	log.Println("Importing for " + teamCode)
+	log.Println("Importing pitches for " + teamCode)
 
 	// Assumes a pg database exists named go-gameday, a role that can access it.
 	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
