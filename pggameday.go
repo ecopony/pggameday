@@ -132,6 +132,7 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	gamedayapi.FetchByTeamAndYears(teamCode, years, fetchFunction)
 }
 
+// ImportPlayersForTeamAndYears saves all player data fields for a team and season.
 func ImportPlayersForTeamAndYears(teamCode string, years []int) {
 	log.Println("Importing players for " + teamCode)
 
@@ -146,10 +147,18 @@ func ImportPlayersForTeamAndYears(teamCode string, years []int) {
 
 	fetchFunction := func(game *gamedayapi.Game) {
 		log.Println(">>>> " + game.ID + " <<<<")
+		var teamID string
+
+		if game.HomeCode == teamCode {
+			teamID = game.HomeTeamID
+		} else {
+			teamID = game.AwayTeamID
+		}
 
 		for _, team := range game.Players().Teams {
 			for _, player := range team.Players {
-				res, err := db.Query(`INSERT INTO players
+				if player.TeamID == teamID {
+					res, err := db.Query(`INSERT INTO players
 					(id, first, last, num, boxname, rl, bats,
 					position, current_position, status, team_abbrev, team_id,
 					parent_team_abbrev, parent_team_id, bat_order, game_position, avg,
@@ -159,17 +168,18 @@ func ImportPlayersForTeamAndYears(teamCode string, years []int) {
 					$8, $9, $10, $11, $12,
 					$13, $14, $15, $16, $17,
 					$18, $19, $20, $21, $22)`,
-					player.ID, player.First, player.Last, nullableString(player.Num), player.Boxname, player.Rl, player.Bats,
-					player.Position, player.CurrentPosition, player.Status, player.TeamAbbrev, player.TeamID,
-					player.ParentTeamAbbrev, nullableString(player.ParentTeamID), nullableString(player.BatOrder), player.GamePosition, player.Avg,
-					player.HR, player.RBI, nullableString(player.Wins), nullableString(player.Losses), nullableString(player.ERA))
+						player.ID, player.First, player.Last, nullableString(player.Num), player.Boxname, player.Rl, player.Bats,
+						player.Position, player.CurrentPosition, player.Status, player.TeamAbbrev, player.TeamID,
+						player.ParentTeamAbbrev, nullableString(player.ParentTeamID), nullableString(player.BatOrder), player.GamePosition, player.Avg,
+						player.HR, player.RBI, nullableString(player.Wins), nullableString(player.Losses), nullableString(player.ERA))
 
-				if err != nil {
-					if !s.Contains(err.Error(), "duplicate key") {
-						log.Fatal(err)
+					if err != nil {
+						if !s.Contains(err.Error(), "duplicate key") {
+							log.Fatal(err)
+						}
+					} else {
+						res.Close()
 					}
-				} else {
-					res.Close()
 				}
 			}
 		}
