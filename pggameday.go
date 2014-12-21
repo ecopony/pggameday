@@ -5,6 +5,7 @@ import (
 	"github.com/ecopony/gamedayapi"
 	_ "github.com/lib/pq" // PostgreSQL driver
 	"log"
+	s "strings"
 )
 
 // CreateTables creates the database tables used by the importer. For now it's just the pitches table.
@@ -34,6 +35,7 @@ func CreateTables() {
 	  	DECIMAL(7, 3), nasty int)`)
 	log.Println("\t-Creating pitches index")
 	db.Exec("CREATE INDEX pitches_game_id ON pitches (game_id)")
+	db.Exec("CREATE UNIQUE INDEX pitches_game_id_pitch_id ON pitches (game_id, pitch_id)")
 
 	log.Println("\t-Creating players table")
 	db.Exec("DROP INDEX IF EXISTS players_id")
@@ -41,10 +43,10 @@ func CreateTables() {
 	db.Exec(`CREATE TABLE players (playerid SERIAL PRIMARY KEY, id int, first varchar(40), last varchar(40), num int,
 		boxname varchar(40), rl varchar(1), bats varchar(1), position varchar(2), current_position varchar(2), status
 		varchar(1), team_abbrev varchar(3), team_id int, parent_team_abbrev varchar(3), parent_team_id int, bat_order int,
-		game_position varchar(2), avg DECIMAL(4, 3), rbi int, wins int, losses int, era DECIMAL(5, 2)`)
+		game_position varchar(2), avg DECIMAL(4, 3), hr int, rbi int, wins int, losses int, era DECIMAL(5, 2))`)
 	log.Println("\t-Creating players index")
-	db.Exec("CREATE INDEX players_id ON players (id)")
-	
+	db.Exec("CREATE UNIQUE INDEX players_id ON players (id)")
+
 	log.Println("Done.")
 }
 
@@ -115,9 +117,58 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 						nullableString(pitch.AX), nullableString(pitch.AY), nullableString(pitch.AZ), nullableString(pitch.BreakY),
 						nullableString(pitch.BreakAngle), nullableString(pitch.BreakLength), nullableString(pitch.Zone),
 						nullableString(pitch.SpinDir), nullableString(pitch.SpinRate), nullableString(pitch.Nasty))
+
 					if err != nil {
+						if !s.Contains(err.Error(), "duplicate key") {
+							log.Fatal(err)
+						}
+					} else {
+						res.Close()
+					}
+				}
+			}
+		}
+	}
+	gamedayapi.FetchByTeamAndYears(teamCode, years, fetchFunction)
+}
+
+func ImportPlayersForTeamAndYears(teamCode string, years []int) {
+	log.Println("Importing players for " + teamCode)
+
+	// Assumes a pg database exists named go-gameday, a role that can access it.
+	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
+	issue := db.Ping()
+	log.Println(issue)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	fetchFunction := func(game *gamedayapi.Game) {
+		log.Println(">>>> " + game.ID + " <<<<")
+
+		for _, team := range game.Players().Teams {
+			for _, player := range team.Players {
+				res, err := db.Query(`INSERT INTO players
+					(id, first, last, num, boxname, rl, bats,
+					position, current_position, status, team_abbrev, team_id,
+					parent_team_abbrev, parent_team_id, bat_order, game_position, avg,
+					hr, rbi, wins, losses, era)
+					VALUES
+					($1, $2, $3, $4, $5, $6, $7,
+					$8, $9, $10, $11, $12,
+					$13, $14, $15, $16, $17,
+					$18, $19, $20, $21, $22)`,
+					player.ID, player.First, player.Last, nullableString(player.Num), player.Boxname, player.Rl, player.Bats,
+					player.Position, player.CurrentPosition, player.Status, player.TeamAbbrev, player.TeamID,
+					player.ParentTeamAbbrev, nullableString(player.ParentTeamID), nullableString(player.BatOrder), player.GamePosition, player.Avg,
+					player.HR, player.RBI, nullableString(player.Wins), nullableString(player.Losses), nullableString(player.ERA))
+
+				if err != nil {
+					if !s.Contains(err.Error(), "duplicate key") {
 						log.Fatal(err)
 					}
+				} else {
 					res.Close()
 				}
 			}
@@ -127,7 +178,7 @@ func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 }
 
 func nullableString(value string) interface{} {
-	if value == "" {
+	if value == "" || value == "-" || value == "-.--" {
 		return nil
 	}
 	return value

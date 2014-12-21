@@ -13,6 +13,7 @@ var commands = map[string]func([]string) {
 	"create-tables": createTables,
 	"import-pitches-for-year": importPitchesForYear,
 	"import-pitches-for-team-and-year": importPitchesForTeamAndYear,
+	"import-players-for-year": importPlayersForYear,
 }
 
 func main() {
@@ -87,3 +88,22 @@ func importPitchesForTeamAndYear(args []string) {
 	pggameday.ImportPitchesForTeamAndYears(teamCode, years)
 }
 
+func importPlayersForYear(args []string) {
+	validateArgLength(args, 1)
+	yearArg := args[1]
+	year, err := strconv.Atoi(yearArg)
+	if err != nil {
+		fmt.Println("Year is not valid")
+	}
+	years := []int{year}
+	teams := gamedayapi.TeamsForYear(year)
+	var wg sync.WaitGroup
+	for _, team := range teams {
+		wg.Add(1)
+		go func(team string) {
+			defer wg.Done()
+			pggameday.ImportPlayersForTeamAndYears(team, years)
+		}(team)
+	}
+	wg.Wait()
+}
