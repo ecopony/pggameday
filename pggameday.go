@@ -45,7 +45,7 @@ func CreateTables() {
 		varchar(1), team_abbrev varchar(3), team_id int, parent_team_abbrev varchar(3), parent_team_id int, bat_order int,
 		game_position varchar(2), avg DECIMAL(4, 3), hr int, rbi int, wins int, losses int, era DECIMAL(5, 2))`)
 	log.Println("\t-Creating players index")
-	db.Exec("CREATE UNIQUE INDEX players_id ON players (id)")
+	db.Exec("CREATE UNIQUE INDEX players_id_team_abbrev ON players (id, team_abbrev)")
 
 	log.Println("Done.")
 }
