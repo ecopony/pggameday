@@ -40,12 +40,12 @@ func CreateTables() {
 	log.Println("\t-Creating players table")
 	db.Exec("DROP INDEX IF EXISTS players_id")
 	db.Exec("DROP TABLE IF EXISTS players")
-	db.Exec(`CREATE TABLE players (playerid SERIAL PRIMARY KEY, id int, first varchar(40), last varchar(40), num int,
+	db.Exec(`CREATE TABLE players (playerid SERIAL PRIMARY KEY, year int, id int, first varchar(40), last varchar(40), num int,
 		boxname varchar(40), rl varchar(1), bats varchar(1), position varchar(2), current_position varchar(2), status
 		varchar(1), team_abbrev varchar(3), team_id int, parent_team_abbrev varchar(3), parent_team_id int, bat_order int,
 		game_position varchar(2), avg DECIMAL(4, 3), hr int, rbi int, wins int, losses int, era DECIMAL(5, 2))`)
 	log.Println("\t-Creating players index")
-	db.Exec("CREATE UNIQUE INDEX players_id_team_abbrev ON players (id, team_abbrev)")
+	db.Exec("CREATE UNIQUE INDEX players_year_id_team_abbrev ON players (year, id, team_abbrev)")
 
 	log.Println("Done.")
 }
@@ -159,16 +159,16 @@ func ImportPlayersForTeamAndYears(teamCode string, years []int) {
 			for _, player := range team.Players {
 				if player.TeamID == teamID {
 					res, err := db.Query(`INSERT INTO players
-					(id, first, last, num, boxname, rl, bats,
+					(year, id, first, last, num, boxname, rl, bats,
 					position, current_position, status, team_abbrev, team_id,
 					parent_team_abbrev, parent_team_id, bat_order, game_position, avg,
 					hr, rbi, wins, losses, era)
 					VALUES
-					($1, $2, $3, $4, $5, $6, $7,
-					$8, $9, $10, $11, $12,
-					$13, $14, $15, $16, $17,
-					$18, $19, $20, $21, $22)`,
-						player.ID, player.First, player.Last, nullableString(player.Num), player.Boxname, player.Rl, player.Bats,
+					($1, $2, $3, $4, $5, $6, $7, $8,
+					$9, $10, $11, $12, $13,
+					$14, $15, $16, $17, $18,
+					$19, $20, $21, $22, $23)`,
+						game.Year(), player.ID, player.First, player.Last, nullableString(player.Num), player.Boxname, player.Rl, player.Bats,
 						player.Position, player.CurrentPosition, player.Status, player.TeamAbbrev, player.TeamID,
 						player.ParentTeamAbbrev, nullableString(player.ParentTeamID), nullableString(player.BatOrder), player.GamePosition, player.Avg,
 						player.HR, player.RBI, nullableString(player.Wins), nullableString(player.Losses), nullableString(player.ERA))
