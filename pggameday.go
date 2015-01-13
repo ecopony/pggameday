@@ -50,6 +50,29 @@ func CreateTables() {
 	log.Println("Done.")
 }
 
+// CreateHitsTable creates the hits table and associated indexes. This will drop things if they already exist, causing
+// data loss.
+func CreateHitsTable() {
+	// Assumes a pg database exists named go-gameday, a role that can access it.
+	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
+	issue := db.Ping()
+	log.Println(issue)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	log.Println("Creating hits table")
+	db.Exec("DROP INDEX IF EXISTS unique_hits")
+	db.Exec("DROP TABLE IF EXISTS hits")
+	db.Exec(`CREATE TABLE hits (hitid SERIAL PRIMARY KEY, game_id varchar(40), year int, des varchar(400), x DECIMAL(5, 2),
+		y DECIMAL(5, 2), batter int, pitcher int, type varchar(1), team varchar(1), inning int)`)
+	log.Println("Creating hits index")
+	db.Exec("CREATE UNIQUE INDEX unique_hits ON hits (game_id, x, y, batter, inning)")
+
+	log.Println("Done with hits")
+}
+
 // ImportPitchesForTeamAndYears saves all pitch data fields for a team and season.
 func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	log.Println("Importing pitches for " + teamCode)

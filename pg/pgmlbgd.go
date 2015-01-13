@@ -11,6 +11,7 @@ import (
 
 var commands = map[string]func([]string) {
 	"create-tables": createTables,
+	"create-hits-table": createHitsTable,
 	"import-pitches-for-year": importPitchesForYear,
 	"import-pitches-for-team-and-year": importPitchesForTeamAndYear,
 	"import-players-for-year": importPlayersForYear,
@@ -50,6 +51,10 @@ func validateArgLength(args []string, validLength int) {
 
 func createTables(args []string) {
 	pggameday.CreateTables()
+}
+
+func createHitsTable(args []string) {
+	pggameday.CreateHitsTable()
 }
 
 func importPitchesForYear(args []string) {
