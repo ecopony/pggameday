@@ -12,6 +12,8 @@ import (
 var commands = map[string]func([]string) {
 	"create-tables": createTables,
 	"create-hits-table": createHitsTable,
+	"create-pitches-table": createPitchesTable,
+	"create-players-table": createPlayersTable,
 	"import-pitches-for-year": importPitchesForYear,
 	"import-pitches-for-team-and-year": importPitchesForTeamAndYear,
 	"import-players-for-year": importPlayersForYear,
@@ -55,6 +57,14 @@ func createTables(args []string) {
 
 func createHitsTable(args []string) {
 	pggameday.CreateHitsTable()
+}
+
+func createPitchesTable(args []string) {
+	pggameday.CreatePitchesTable()
+}
+
+func createPlayersTable(args []string) {
+	pggameday.CreatePlayersTable()
 }
 
 func importPitchesForYear(args []string) {

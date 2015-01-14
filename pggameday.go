@@ -11,8 +11,16 @@ import (
 // CreateTables creates the database tables used by the importer. For now it's just the pitches table.
 // This will drop tables if they already exist.
 func CreateTables() {
-	log.Println("Creating database tables.")
+	log.Println("Creating database tables")
+	CreatePitchesTable()
+	CreatePlayersTable()
+	CreateHitsTable()
+	log.Println("Done")
+}
 
+// CreatePitchesTable creates the pitches table and associated indexes. This will drop things if they already exist, causing
+// data loss.
+func CreatePitchesTable() {
 	// Assumes a pg database exists named go-gameday, a role that can access it.
 	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
 	if err != nil {
@@ -20,7 +28,7 @@ func CreateTables() {
 	}
 	defer db.Close()
 
-	log.Println("\t-Creating pitches table")
+	log.Println("Creating pitches table")
 	db.Exec("DROP INDEX IF EXISTS pitches_game_id")
 	db.Exec("DROP TABLE IF EXISTS pitches")
 	db.Exec(`CREATE TABLE pitches (pitchid SERIAL PRIMARY KEY, game_id varchar(40), year int, inning int, half varchar(6),
@@ -33,21 +41,32 @@ func CreateTables() {
 	  	DECIMAL(4, 2), vy0 DECIMAL(6, 3), vz0 DECIMAL(5, 3), ax DECIMAL(5, 3), ay DECIMAL(5, 3), az DECIMAL(5, 3), break_y
 	  	DECIMAL(3, 1), break_angle DECIMAL(4, 1), break_length DECIMAL(3, 1), zone int, spin_dir DECIMAL(6, 3), spin_rate
 	  	DECIMAL(7, 3), nasty int)`)
-	log.Println("\t-Creating pitches index")
+	log.Println("Creating pitches index")
 	db.Exec("CREATE INDEX pitches_game_id ON pitches (game_id)")
 	db.Exec("CREATE UNIQUE INDEX pitches_game_id_pitch_id ON pitches (game_id, pitch_id)")
+	log.Println("Done with pitchers")
+}
 
-	log.Println("\t-Creating players table")
+// CreatePlayersTable creates the players table and associated indexes. This will drop things if they already exist, causing
+// data loss.
+func CreatePlayersTable() {
+	// Assumes a pg database exists named go-gameday, a role that can access it.
+	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	log.Println("Creating players table")
 	db.Exec("DROP INDEX IF EXISTS players_id")
 	db.Exec("DROP TABLE IF EXISTS players")
 	db.Exec(`CREATE TABLE players (playerid SERIAL PRIMARY KEY, year int, id int, first varchar(40), last varchar(40), num int,
 		boxname varchar(40), rl varchar(1), bats varchar(1), position varchar(2), current_position varchar(2), status
 		varchar(1), team_abbrev varchar(3), team_id int, parent_team_abbrev varchar(3), parent_team_id int, bat_order int,
 		game_position varchar(2), avg DECIMAL(4, 3), hr int, rbi int, wins int, losses int, era DECIMAL(5, 2))`)
-	log.Println("\t-Creating players index")
+	log.Println("Creating players index")
 	db.Exec("CREATE UNIQUE INDEX players_year_id_team_abbrev ON players (year, id, team_abbrev)")
-
-	log.Println("Done.")
+	log.Println("Done with players")
 }
 
 // CreateHitsTable creates the hits table and associated indexes. This will drop things if they already exist, causing
@@ -55,8 +74,6 @@ func CreateTables() {
 func CreateHitsTable() {
 	// Assumes a pg database exists named go-gameday, a role that can access it.
 	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
-	issue := db.Ping()
-	log.Println(issue)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,7 +86,6 @@ func CreateHitsTable() {
 		y DECIMAL(5, 2), batter int, pitcher int, type varchar(1), team varchar(1), inning int)`)
 	log.Println("Creating hits index")
 	db.Exec("CREATE UNIQUE INDEX unique_hits ON hits (game_id, x, y, batter, inning)")
-
 	log.Println("Done with hits")
 }
 
