@@ -89,6 +89,50 @@ func CreateHitsTable() {
 	log.Println("Done with hits")
 }
 
+// ImportHitsForTeamAndYears saves all hit data fields for a team and season in the hits table.
+func ImportHitsForTeamAndYears(teamCode string, years []int) {
+	log.Println("Importing hits for " + teamCode)
+
+	// Assumes a pg database exists named go-gameday, a role that can access it.
+	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	fetchFunction := func(game *gamedayapi.Game) {
+		log.Println(">>>> " + game.ID + " <<<<")
+
+		var hitCount int
+		err := db.QueryRow("SELECT count(*) FROM hits WHERE game_id = $1", game.ID).Scan(&hitCount)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if hitCount > 0 {
+			return
+		}
+
+		hips := game.HitChart().Hips
+		for _, hit := range hips {
+			res, err := db.Query(`INSERT INTO hits
+						(game_id, year, des, x, y, batter, pitcher, type, team, inning)
+						VALUES
+						($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+				game.ID, game.Year(), hit.Des, hit.X, hit.Y, hit.Batter, hit.Pitcher, hit.Type, hit.Team, hit.Inning)
+
+			if err != nil {
+				if !s.Contains(err.Error(), "duplicate key") {
+					log.Fatal(err)
+				}
+			} else {
+				res.Close()
+			}
+		}
+	}
+
+	gamedayapi.FetchByTeamAndYears(teamCode, years, fetchFunction)
+}
+
 // ImportPitchesForTeamAndYears saves all pitch data fields for a team and season.
 func ImportPitchesForTeamAndYears(teamCode string, years []int) {
 	log.Println("Importing pitches for " + teamCode)

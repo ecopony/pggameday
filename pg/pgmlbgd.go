@@ -14,8 +14,8 @@ var commands = map[string]func([]string) {
 	"create-hits-table": createHitsTable,
 	"create-pitches-table": createPitchesTable,
 	"create-players-table": createPlayersTable,
+	"import-hits-for-year": importHitsForYear,
 	"import-pitches-for-year": importPitchesForYear,
-	"import-pitches-for-team-and-year": importPitchesForTeamAndYear,
 	"import-players-for-year": importPlayersForYear,
 }
 
@@ -51,6 +51,15 @@ func validateArgLength(args []string, validLength int) {
 	}
 }
 
+func parseYearArg(yearArg string) int {
+	year, err := strconv.Atoi(yearArg)
+	if err != nil {
+		fmt.Println("Year is not valid")
+		os.Exit(1)
+	}
+	return year
+}
+
 func createTables(args []string) {
 	pggameday.CreateTables()
 }
@@ -67,13 +76,27 @@ func createPlayersTable(args []string) {
 	pggameday.CreatePlayersTable()
 }
 
+func importHitsForYear(args []string) {
+	validateArgLength(args, 1)
+	yearArg := args[1]
+	year := parseYearArg(yearArg)
+	years := []int{year}
+	teams := gamedayapi.TeamsForYear(year)
+	var wg sync.WaitGroup
+	for _, team := range teams {
+		wg.Add(1)
+		go func(team string) {
+			defer wg.Done()
+			pggameday.ImportHitsForTeamAndYears(team, years)
+		}(team)
+	}
+	wg.Wait()
+}
+
 func importPitchesForYear(args []string) {
 	validateArgLength(args, 1)
 	yearArg := args[1]
-	year, err := strconv.Atoi(yearArg)
-	if err != nil {
-		fmt.Println("Year is not valid")
-	}
+	year := parseYearArg(yearArg)
 	years := []int{year}
 	teams := gamedayapi.TeamsForYear(year)
 	var wg sync.WaitGroup
@@ -85,22 +108,6 @@ func importPitchesForYear(args []string) {
 		}(team)
 	}
 	wg.Wait()
-}
-
-func importPitchesForTeamAndYear(args []string) {
-	validateArgLength(args, 2)
-	teamCode := args[1]
-	yearArgs := args[2:]
-	var years []int
-	for i := 0; i < len(yearArgs); i++ {
-		year, err := strconv.Atoi(yearArgs[i])
-		if err != nil {
-			fmt.Println("Year is not valid")
-		}
-		years = append(years, year)
-	}
-
-	pggameday.ImportPitchesForTeamAndYears(teamCode, years)
 }
 
 func importPlayersForYear(args []string) {
