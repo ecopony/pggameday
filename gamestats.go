@@ -7,13 +7,13 @@ import (
 
 type GameStats struct {
 	StatsTeamCode string
-	Game        *gamedayapi.Game
-	StatsTeamWon bool
-	WalkOffLoss bool
+	Game          *gamedayapi.Game
+	StatsTeamWon  bool
+	WalkOffLoss   bool
 }
 
-func GameStatsFor(statsTeamCode string, game *gamedayapi.Game) (*GameStats) {
-	gameStats := GameStats{ StatsTeamCode: statsTeamCode, Game: game }
+func GameStatsFor(statsTeamCode string, game *gamedayapi.Game) *GameStats {
+	gameStats := GameStats{StatsTeamCode: statsTeamCode, Game: game}
 	gameStats.determineStatsTeamWon()
 	gameStats.determineWalkOffLoss()
 	return &gameStats
@@ -22,13 +22,13 @@ func GameStatsFor(statsTeamCode string, game *gamedayapi.Game) (*GameStats) {
 func (gameStats *GameStats) determineStatsTeamWon() {
 	var winningTeamCode string
 	homeTeamWon := gameStats.Game.Boxscore().Linescore.HomeTeamRuns > gameStats.Game.Boxscore().Linescore.AwayTeamRuns
-	if(homeTeamWon) {
+	if homeTeamWon {
 		winningTeamCode = gameStats.Game.HomeCode
 	} else {
 		winningTeamCode = gameStats.Game.AwayCode
 	}
 
-	if (winningTeamCode == gameStats.StatsTeamCode) {
+	if winningTeamCode == gameStats.StatsTeamCode {
 		gameStats.StatsTeamWon = true
 	} else {
 		gameStats.StatsTeamWon = false
@@ -36,7 +36,7 @@ func (gameStats *GameStats) determineStatsTeamWon() {
 }
 
 func (gameStats *GameStats) determineWalkOffLoss() {
-	if(gameStats.StatsTeamWon || gameStats.IsStatsTeamHomeTeam()) {
+	if gameStats.StatsTeamWon || gameStats.IsStatsTeamHomeTeam() {
 		gameStats.WalkOffLoss = false
 		return
 	}
@@ -50,7 +50,7 @@ func (gameStats *GameStats) determineWalkOffLoss() {
 		return
 	}
 
-	if (bottomOfLastInningRuns > 0) {
+	if bottomOfLastInningRuns > 0 {
 		gameStats.WalkOffLoss = true
 		return
 	}
