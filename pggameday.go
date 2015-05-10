@@ -5,6 +5,7 @@ import (
 	"github.com/ecopony/gamedayapi"
 	_ "github.com/lib/pq" // PostgreSQL driver
 	"log"
+	"strconv"
 	s "strings"
 )
 
@@ -15,6 +16,7 @@ func CreateTables() {
 	CreatePitchesTable()
 	CreatePlayersTable()
 	CreateHitsTable()
+	CreateGameStatsTable()
 	log.Println("Done")
 }
 
@@ -87,6 +89,53 @@ func CreateHitsTable() {
 	log.Println("Creating hits index")
 	db.Exec("CREATE UNIQUE INDEX unique_hits ON hits (game_id, x, y, batter, inning)")
 	log.Println("Done with hits")
+}
+
+// CreateGameStatsTable creates the hits table and associated indexes. This will drop things if they already exist,
+// causing data loss.
+func CreateGameStatsTable() {
+	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	log.Println("Creating game_stats table")
+	db.Exec("DROP TABLE IF EXISTS game_stats")
+	db.Exec(`CREATE TABLE game_stats (gamestatid SERIAL PRIMARY KEY, game_id varchar(40), year int, team_code varchar(3), walk_off_loss boolean)`)
+	log.Println("Done with game_stats")
+}
+
+// ImportGameStatsForTeamAndYears saves game stats fields for a team and season in the game_stats table.
+func ImportGameStatsForTeamAndYears(teamCode string, years []int) {
+	// Assumes a pg database exists named go-gameday, a role that can access it.
+	db, err := sql.Open("postgres", "user=go-gameday dbname=go-gameday sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	for _, year := range years {
+		log.Println("Importing game stats for " + strconv.Itoa(year))
+	}
+
+	fetchFunction := func(game *gamedayapi.Game) {
+		gameStats := GameStatsFor(teamCode, game)
+
+		res, err := db.Query(`INSERT INTO game_stats
+						(game_id, year, team_code, walk_off_loss)
+						VALUES
+						($1, $2, $3, $4)`,
+			game.ID, game.Year(), gameStats.StatsTeamCode, gameStats.WalkOffLoss)
+
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			res.Close()
+		}
+	}
+
+	gamedayapi.FetchByTeamAndYears(teamCode, years, fetchFunction)
 }
 
 // ImportHitsForTeamAndYears saves all hit data fields for a team and season in the hits table.

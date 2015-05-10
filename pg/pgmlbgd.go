@@ -12,9 +12,11 @@ import (
 var commands = map[string]func([]string) {
 	"create-tables": createTables,
 	"create-hits-table": createHitsTable,
+	"create-game-stats-table": createGameStatsTable,
 	"create-pitches-table": createPitchesTable,
 	"create-players-table": createPlayersTable,
 	"import-hits-for-year": importHitsForYear,
+	"import-game-stats-for-year": importGameStatsForYear,
 	"import-pitches-for-year": importPitchesForYear,
 	"import-players-for-year": importPlayersForYear,
 }
@@ -68,6 +70,10 @@ func createHitsTable(args []string) {
 	pggameday.CreateHitsTable()
 }
 
+func createGameStatsTable(args []string) {
+	pggameday.CreateGameStatsTable()
+}
+
 func createPitchesTable(args []string) {
 	pggameday.CreatePitchesTable()
 }
@@ -88,6 +94,23 @@ func importHitsForYear(args []string) {
 		go func(team string) {
 			defer wg.Done()
 			pggameday.ImportHitsForTeamAndYears(team, years)
+		}(team)
+	}
+	wg.Wait()
+}
+
+func importGameStatsForYear(args []string) {
+	validateArgLength(args, 1)
+	yearArg := args[1]
+	year := parseYearArg(yearArg)
+	years := []int{year}
+	teams := gamedayapi.TeamsForYear(year)
+	var wg sync.WaitGroup
+	for _, team := range teams {
+		wg.Add(1)
+		go func(team string) {
+			defer wg.Done()
+			pggameday.ImportGameStatsForTeamAndYears(team, years)
 		}(team)
 	}
 	wg.Wait()
