@@ -6,15 +6,17 @@ import (
 )
 
 type GameStats struct {
-	StatsTeamCode string
-	Game          *gamedayapi.Game
-	StatsTeamWon  bool
-	WalkOffLoss   bool
+	StatsTeamCode   string
+	Game            *gamedayapi.Game
+	StatsTeamWon    bool
+	ExtraInningLoss bool
+	WalkOffLoss     bool
 }
 
 func GameStatsFor(statsTeamCode string, game *gamedayapi.Game) *GameStats {
 	gameStats := GameStats{StatsTeamCode: statsTeamCode, Game: game}
 	gameStats.determineStatsTeamWon()
+	gameStats.determineExtraInningLoss()
 	gameStats.determineWalkOffLoss()
 	return &gameStats
 }
@@ -32,6 +34,14 @@ func (gameStats *GameStats) determineStatsTeamWon() {
 		gameStats.StatsTeamWon = true
 	} else {
 		gameStats.StatsTeamWon = false
+	}
+}
+
+func (gameStats *GameStats) determineExtraInningLoss() {
+	if !gameStats.StatsTeamWon && len(gameStats.Game.AllInnings().Innings) > 9 {
+		gameStats.ExtraInningLoss = true
+	} else {
+		gameStats.ExtraInningLoss = false
 	}
 }
 

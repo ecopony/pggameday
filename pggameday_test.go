@@ -49,3 +49,17 @@ func TestWalkOffLossFalseOnRegularLoss(t *testing.T) {
 	gameStats := GameStatsFor("sea", game)
 	assertEquals(t, false, gameStats.WalkOffLoss)
 }
+
+func TestExtraInningLoss(t *testing.T) {
+	date, _ := time.Parse("2006-01-02", "2015-04-26")
+	game, _ := gamedayapi.GameFor("sea", date)
+	gameStats := GameStatsFor("sea", game)
+	assertEquals(t, true, gameStats.ExtraInningLoss)
+}
+
+func TestExtraInningLossFalseOnExtraInningWin(t *testing.T) {
+	date, _ := time.Parse("2006-01-02", "2015-05-08")
+	game, _ := gamedayapi.GameFor("sea", date)
+	gameStats := GameStatsFor("sea", game)
+	assertEquals(t, false, gameStats.ExtraInningLoss)
+}

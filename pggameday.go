@@ -102,7 +102,8 @@ func CreateGameStatsTable() {
 
 	log.Println("Creating game_stats table")
 	db.Exec("DROP TABLE IF EXISTS game_stats")
-	db.Exec(`CREATE TABLE game_stats (gamestatid SERIAL PRIMARY KEY, game_id varchar(40), year int, team_code varchar(3), walk_off_loss boolean)`)
+	db.Exec(`CREATE TABLE game_stats (gamestatid SERIAL PRIMARY KEY, game_id varchar(40), year int, team_code varchar(3),
+		walk_off_loss boolean, extra_inning_loss boolean)`)
 	log.Println("Done with game_stats")
 }
 
@@ -123,10 +124,10 @@ func ImportGameStatsForTeamAndYears(teamCode string, years []int) {
 		gameStats := GameStatsFor(teamCode, game)
 
 		res, err := db.Query(`INSERT INTO game_stats
-						(game_id, year, team_code, walk_off_loss)
+						(game_id, year, team_code, walk_off_loss, extra_inning_loss)
 						VALUES
-						($1, $2, $3, $4)`,
-			game.ID, game.Year(), gameStats.StatsTeamCode, gameStats.WalkOffLoss)
+						($1, $2, $3, $4, $5)`,
+			game.ID, game.Year(), gameStats.StatsTeamCode, gameStats.WalkOffLoss, gameStats.ExtraInningLoss)
 
 		if err != nil {
 			log.Fatal(err)
