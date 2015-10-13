@@ -26,3 +26,5 @@ _testmain.go
 pgmlbgd
 *.iml
 *.swp
+
+.idea
